@@ -32,6 +32,13 @@ CRUD REST API для управления групповыми денежным�
 - Docker  
 - Docker Compose  
 
+### 🔹 Запуск приложения
+
+**Клонирование репозитория**
+```bash
+git clone git@github.com:Dmitriy1689/donut_tracker.git
+cd donut_tracker
+```
 ### 🔹 Настройка окружения
 Создайте файл `.env` в корне проекта:
 
@@ -44,14 +51,6 @@ POSTGRES_PASSWORD=password
 POSTGRES_HOST=db
 POSTGRES_PORT=5432
 REDIS_URL=redis://redis:6379/1
-```
-
-### 🔹 Запуск приложения
-
-**Клонирование репозитория**
-```bash
-git clone git@github.com:Dmitriy1689/donut_tracker.git
-cd donut_tracker
 ```
 
 **Запуск контейнеров**
