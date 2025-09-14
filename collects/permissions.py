@@ -1,7 +1,7 @@
 from rest_framework import permissions
 
 
-class IsDonatorOrReadOnly(permissions.BasePermission):
+class IsAuthorOrReadOnly(permissions.BasePermission):
     """
     Пользователь может изменять объект только если он его владелец.
     """
@@ -9,4 +9,4 @@ class IsDonatorOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return obj.donator == request.user
+        return obj.author == request.user

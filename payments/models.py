@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from collects.constants import AMOUNT_DECIMAL_PLACES, AMOUNT_MAX_DIGITS
@@ -39,6 +40,22 @@ class Payment(models.Model):
         default=False,
         verbose_name='Скрыть сумму в ленте',
     )
+
+    def clean(self):
+        """Валидация в модели для админки."""
+
+        super().clean()
+
+        if self.collect.target_amount is not None:
+            remaining_amount = (
+                self.collect.target_amount - self.collect.current_amount
+            )
+
+            if self.amount > remaining_amount:
+                raise ValidationError(
+                    f'Сумма платежа превышает оставшуюся сумму сбора. '
+                    f'Максимально можно внести: {remaining_amount}'
+                )
 
     def __str__(self):
         return (

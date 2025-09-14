@@ -32,7 +32,24 @@ class PaymentSerializer(serializers.ModelSerializer):
             'payment_datetime',
             'hide_amount',
         ]
-        read_only_fields = ['id', 'payment_datetime', 'donator_details']
+        read_only_fields = [
+            'id', 'payment_datetime', 'donator_details', 'donator'
+        ]
+
+    def validate(self, attrs):
+        """Проверяем, что платеж не превышает оставшуюся сумму сбора."""
+        collect = attrs.get('collect')
+        amount = attrs.get('amount')
+
+        if collect.target_amount is not None:
+            remaining_amount = collect.target_amount - collect.current_amount
+
+            if amount > remaining_amount:
+                raise serializers.ValidationError(
+                    f'Сумма платежа ({amount}) превышает оставшуюся сумму '
+                    f'сбора. Максимально можно внести: {remaining_amount} '
+                )
+        return attrs
 
     def create(self, validated_data):
         validated_data['donator'] = self.context['request'].user

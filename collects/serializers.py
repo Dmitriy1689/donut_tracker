@@ -29,13 +29,16 @@ class CollectSerializer(serializers.ModelSerializer):
             'end_datetime',
             'created_at',
             'cover_image',
+            'is_completed',
         ]
         read_only_fields = [
             'id',
             'created_at',
+            'author',
             'author_details',
             'current_amount',
             'donators_count',
+            'is_completed',
         ]
 
     def validate_end_datetime(self, value):

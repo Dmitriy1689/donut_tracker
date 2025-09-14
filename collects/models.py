@@ -80,6 +80,10 @@ class Collect(models.Model):
         blank=True,
         verbose_name='Обложка сбора',
     )
+    is_completed = models.BooleanField(
+        default=False,
+        verbose_name='Сбор завершен',
+    )
 
     def __str__(self):
         return f"{self.title}"
