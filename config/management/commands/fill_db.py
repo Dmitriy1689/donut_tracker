@@ -73,18 +73,31 @@ class Command(BaseCommand):
         for collect in collects:
             for i in range(options['payments']):
                 donator = random.choice(users)
+
+                if collect.is_completed:
+                    continue
+
                 amount = random.randint(100, 1000)
+
+                if (
+                    collect.target_amount is not None
+                    and collect.current_amount + amount > collect.target_amount
+                ):
+
+                    amount = collect.target_amount - collect.current_amount
+                    Payment.objects.create(
+                        collect=collect,
+                        donator=donator,
+                        amount=amount,
+                        hide_amount=random.choice([True, False])
+                    )
+                    break
+
                 Payment.objects.create(
                     collect=collect,
                     donator=donator,
                     amount=amount,
                     hide_amount=random.choice([True, False])
-                )
-                self.stdout.write(
-                    (
-                        f'Создан платеж: {amount} от {donator.username} '
-                        f'в сбор {collect.title}'
-                    )
                 )
         self.stdout.write(
             self.style.SUCCESS('БД успешно заполнена тестовыми данными.')
