@@ -58,11 +58,6 @@ REDIS_URL=redis://redis:6379/1
 docker-compose up -d --build
 ```
 
-**Выполнение миграций**
-```bash
-docker-compose exec web python manage.py migrate
-```
-
 **Создание суперпользователя**
 ```bash
 docker-compose exec web python manage.py createsuperuser
@@ -119,18 +114,21 @@ curl -H "Authorization: Token your_token_here" http://127.0.0.1:8000/api/v1/coll
 
 **Создание сбора**
 ```bash
-curl -X POST http://127.0.0.1:8000/api/v1/collects/   -H "Authorization: Token your_token"   -H "Content-Type: application/json"   -d '{
-    "title": "Сбор на лечение",
-    "description": "Сбор средств на медицинские расходы",
+curl -X POST http://127.0.0.1:8000/api/v1/collects/   -H "Authorization: Token <your token>"   -H "Content-Type: application/json"   -d '{
+    "title": "Medical Treatment Fund",
+    "description": "Fundraising for medical expenses",
     "occasion": "medicine",
     "target_amount": 50000,
-    "end_datetime": "2024-12-31T23:59:59Z"
+    "end_datetime": "2025-12-31T23:59:59Z"
   }'
 ```
 
 **Создание платежа**
 ```bash
-curl -X POST http://127.0.0.1:8000/api/v1/payments/   -H "Authorization: Token your_token"   -H "Content-Type: application/json"   -d '{
+curl -X POST http://localhost:8000/api/v1/payments/ \
+  -H "Authorization: Token your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
     "collect": 1,
     "amount": 1000,
     "hide_amount": false
