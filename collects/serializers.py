@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import serializers
 
-from payments.serializers import UserShortSerializer
+from payments.serializers import PaymentShortSerializer, UserShortSerializer
 from collects.models import Collect
 
 
@@ -13,6 +13,9 @@ class CollectSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Collect."""
 
     author_details = UserShortSerializer(source='author', read_only=True)
+    payments = PaymentShortSerializer(many=True, read_only=True)
+    current_amount = serializers.SerializerMethodField()
+    donators_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Collect
@@ -30,14 +33,13 @@ class CollectSerializer(serializers.ModelSerializer):
             'created_at',
             'cover_image',
             'is_completed',
+            'payments',
         ]
         read_only_fields = [
             'id',
             'created_at',
             'author',
             'author_details',
-            'current_amount',
-            'donators_count',
             'is_completed',
         ]
 
@@ -58,3 +60,9 @@ class CollectSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['author'] = self.context['request'].user
         return super().create(validated_data)
+
+    def get_current_amount(self, obj):
+        return getattr(obj, 'total_amount', 0) or obj.current_amount
+
+    def get_donators_count(self, obj):
+        return getattr(obj, 'total_donators', 0) or obj.donators_count

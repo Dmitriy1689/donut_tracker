@@ -23,3 +23,7 @@ class CollectAdmin(admin.ModelAdmin):
             'fields': ('end_datetime', 'cover_image', 'created_at')
         }),
     )
+
+    @admin.display(description='Current Amount')
+    def current_amount(self, obj):
+        return obj.current_amount

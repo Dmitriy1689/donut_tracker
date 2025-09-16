@@ -16,6 +16,21 @@ class UserShortSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'username', 'first_name', 'last_name']
 
 
+class PaymentShortSerializer(serializers.ModelSerializer):
+    """Краткий сериализатор для модели Payment."""
+
+    donator_username = serializers.CharField(
+        source='donator.username', read_only=True
+    )
+
+    class Meta:
+        model = Payment
+        fields = [
+            'id', 'donator_username', 'amount',
+            'payment_datetime', 'hide_amount'
+        ]
+
+
 class PaymentSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Payment."""
 
@@ -42,7 +57,8 @@ class PaymentSerializer(serializers.ModelSerializer):
         amount = attrs.get('amount')
 
         if collect.target_amount is not None:
-            remaining_amount = collect.target_amount - collect.current_amount
+            current_total = collect.current_amount
+            remaining_amount = collect.target_amount - current_total
 
             if amount > remaining_amount:
                 raise serializers.ValidationError(

@@ -27,9 +27,6 @@ class PaymentViewSet(
         return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
-        if not self.request.user.is_authenticated:
-            return Payment.objects.none()
-
         collect_id = self.request.query_params.get('collect_id')
         queryset = Payment.objects.filter(donator=self.request.user)
 

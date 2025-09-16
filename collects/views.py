@@ -1,3 +1,4 @@
+from django.db.models import Count, Sum
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework import viewsets
@@ -23,7 +24,10 @@ class CollectViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
 
     def get_queryset(self):
-        return Collect.objects.all().order_by('-created_at')
+        return Collect.objects.annotate(
+            total_amount=Sum('payments__amount'),
+            total_donators=Count('payments__donator', distinct=True)
+        ).prefetch_related('payments__donator')
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

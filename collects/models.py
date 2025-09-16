@@ -1,12 +1,11 @@
 from django.db import models
+from django.db.models import Sum
 from django.contrib.auth import get_user_model
 
 from collects.constants import (
     AMOUNT_DECIMAL_PLACES,
-    AMOUNT_DEFAULT_VALUE,
     AMOUNT_MAX_DIGITS,
     DESCRIPTION_LENGTH_LIMIT,
-    DONATORS_DEFAULT_VALUE,
     TITLE_LENGTH_LIMIT,
 )
 
@@ -57,16 +56,16 @@ class Collect(models.Model):
         null=True,
         blank=True,
     )
-    current_amount = models.DecimalField(
-        max_digits=AMOUNT_MAX_DIGITS,
-        decimal_places=AMOUNT_DECIMAL_PLACES,
-        verbose_name='Собранная сумма',
-        default=AMOUNT_DEFAULT_VALUE,
-    )
-    donators_count = models.PositiveIntegerField(
-        verbose_name='Количество донатеров',
-        default=DONATORS_DEFAULT_VALUE,
-    )
+    # current_amount = models.DecimalField(
+    #     max_digits=AMOUNT_MAX_DIGITS,
+    #     decimal_places=AMOUNT_DECIMAL_PLACES,
+    #     verbose_name='Собранная сумма',
+    #     default=AMOUNT_DEFAULT_VALUE,
+    # )
+    # donators_count = models.PositiveIntegerField(
+    #     verbose_name='Количество донатеров',
+    #     default=DONATORS_DEFAULT_VALUE,
+    # )
     end_datetime = models.DateTimeField(
         verbose_name='Дата и время окончания сбора',
     )
@@ -84,6 +83,19 @@ class Collect(models.Model):
         default=False,
         verbose_name='Сбор завершен',
     )
+
+    @property
+    def current_amount(self):
+        """Вычисление собранной суммы 'на лету'"""
+        current_amount = self.payments.aggregate(
+            total=Sum('amount')
+        )['total']
+        return current_amount or 0
+
+    @property
+    def donators_count(self):
+        """Расчет количества уникальных пользователей, участвующих в сборе."""
+        return self.payments.values('donator').distinct().count()
 
     def __str__(self):
         return f"{self.title}"

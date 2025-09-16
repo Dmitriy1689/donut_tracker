@@ -24,7 +24,7 @@ class Payment(models.Model):
     donator = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
-        related_name='payments',
+        related_name='donations',
         verbose_name='Донатер',
     )
     amount = models.DecimalField(
