@@ -41,6 +41,24 @@ services:
       - redis
     networks:
       - app-network
+  
+  celery:
+    build: .
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/donut_tracker
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+      - web
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
