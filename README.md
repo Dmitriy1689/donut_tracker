@@ -68,6 +68,16 @@ docker-compose exec web python manage.py createsuperuser
 docker-compose exec web python manage.py fill_db --users 5 --collects 3 --payments 10
 ```
 
+**Запуск тестов**
+```bash
+docker-compose exec web pytest
+```
+
+**Просмотр логов CELERY**
+```bash
+docker-compose logs celery
+```
+
 ---
 
 ## 🌐 Доступные эндпоинты
