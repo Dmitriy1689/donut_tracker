@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from rest_framework import serializers
 
 from payments.models import Payment
@@ -52,19 +53,27 @@ class PaymentSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        """Проверяем, что платеж не превышает оставшуюся сумму сбора."""
         collect = attrs.get('collect')
         amount = attrs.get('amount')
 
+        if collect.is_completed:
+            raise serializers.ValidationError({
+                'collect': 'Сбор уже завершен. Новые платежи не принимаются.'
+            })
+
         if collect.target_amount is not None:
-            current_total = collect.current_amount
+            current_total = (
+                collect.payments.aggregate(total=Sum('amount'))['total'] or 0
+            )
             remaining_amount = collect.target_amount - current_total
 
             if amount > remaining_amount:
-                raise serializers.ValidationError(
-                    f'Сумма платежа ({amount}) превышает оставшуюся сумму '
-                    f'сбора. Максимально можно внести: {remaining_amount} '
-                )
+                raise serializers.ValidationError({
+                    'amount': (
+                        f'Сумма платежа ({amount}) превышает оставшуюся сумму '
+                        f'сбора. Максимально можно внести: {remaining_amount}'
+                    )
+                })
         return attrs
 
     def create(self, validated_data):

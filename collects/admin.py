@@ -11,7 +11,7 @@ class CollectAdmin(admin.ModelAdmin):
     )
     list_filter = ('occasion', 'created_at', 'end_datetime')
     search_fields = ('title', 'author__username', 'description')
-    readonly_fields = ('current_amount', 'donators_count', 'created_at')
+    readonly_fields = ('current_amount', 'created_at')
     fieldsets = (
         ('Основная информация', {
             'fields': ('author', 'title', 'description', 'occasion')

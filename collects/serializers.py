@@ -3,6 +3,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from payments.serializers import PaymentShortSerializer, UserShortSerializer
+from collects.constants import AMOUNT_DECIMAL_PLACES, AMOUNT_MAX_DIGITS
 from collects.models import Collect
 
 
@@ -14,8 +15,12 @@ class CollectSerializer(serializers.ModelSerializer):
 
     author_details = UserShortSerializer(source='author', read_only=True)
     payments = PaymentShortSerializer(many=True, read_only=True)
-    current_amount = serializers.SerializerMethodField()
-    donators_count = serializers.SerializerMethodField()
+    current_amount = serializers.DecimalField(
+        max_digits=AMOUNT_MAX_DIGITS,
+        decimal_places=AMOUNT_DECIMAL_PLACES,
+        read_only=True,
+    )
+    donators_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Collect

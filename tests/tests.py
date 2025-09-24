@@ -1,9 +1,22 @@
+from datetime import timedelta
 from decimal import Decimal
+
+from django.db.models import Count, Sum
+from django.utils import timezone
 from model_bakery import baker
 from rest_framework import status
 
+from collects.models import Collect
+from collects.serializers import CollectSerializer
+from payments.serializers import PaymentSerializer
 
-def test_payment_creation(collect, user):
+
+def test_payment_creation(
+        collect,
+        user,
+        authenticated_client,
+        payment_data
+):
     """Тест на корректное создание платежа через ORM."""
     payment = baker.make(
         'payments.Payment',
@@ -11,14 +24,23 @@ def test_payment_creation(collect, user):
         donator=user,
         amount=500
     )
+    response = authenticated_client.post('/api/v1/payments/', payment_data)
 
+    assert Decimal(response.data['amount']) == Decimal(payment_data['amount'])
+    assert response.data['collect'] == payment_data['collect']
+    assert 'id' in response.data
     assert payment.collect == collect
     assert payment.donator == user
     assert payment.amount == 500
     assert not payment.hide_amount
 
 
-def test_collect_current_amount(collect, user):
+def test_collect_current_amount(
+        collect,
+        user,
+        authenticated_client,
+        payment_data
+):
     """Тест на корректную калькуляцию платежей."""
     baker.make(
         'payments.Payment',
@@ -28,8 +50,21 @@ def test_collect_current_amount(collect, user):
         _quantity=3
     )
 
-    assert collect.current_amount == 3000
-    assert collect.donators_count == 1
+    collect = (
+        Collect.objects
+        .annotate(
+            total_amount=Sum("payments__amount"),
+            total_donators=Count("payments__donator", distinct=True)
+        )
+        .get(id=collect.id)
+    )
+
+    response = authenticated_client.post('/api/v1/payments/', payment_data)
+    assert Decimal(response.data['amount']) == Decimal(payment_data['amount'])
+    assert response.data['collect'] == payment_data['collect']
+    assert 'id' in response.data
+    assert collect.total_amount == 3000
+    assert collect.total_donators == 1
 
 
 def test_collect_multiple_donators(collect, user, another_user):
@@ -46,8 +81,17 @@ def test_collect_multiple_donators(collect, user, another_user):
         amount=2000
     )
 
-    assert collect.current_amount == 3000
-    assert collect.donators_count == 2
+    collect = (
+        Collect.objects
+        .annotate(
+            total_amount=Sum("payments__amount"),
+            total_donators=Count("payments__donator", distinct=True)
+        )
+        .get(id=collect.id)
+    )
+
+    assert collect.total_amount == 3000
+    assert collect.total_donators == 2
 
 
 def test_create_collect(authenticated_client, user):
@@ -120,3 +164,66 @@ def test_unauthenticated_access(api_client):
     response = api_client.get('/api/v1/payments/')
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_collect_serializer_end_date_validation(user):
+    """Тест валидации даты окончания сбора."""
+    data = {
+        'title': 'Test Collect',
+        'description': 'Test Description',
+        'occasion': 'birthday',
+        'target_amount': 10000,
+        'end_datetime': timezone.now() - timezone.timedelta(days=1)
+    }
+
+    serializer = CollectSerializer(data=data, context={'request': None})
+    assert not serializer.is_valid()
+    assert 'end_datetime' in serializer.errors
+
+
+def test_payment_serializer_amount_validation(collect, user):
+    """Тест валидации превышенной суммы платежа."""
+    data = {
+        'collect': collect.id,
+        'amount': collect.target_amount + 1000,
+        'hide_amount': False
+    }
+
+    serializer = PaymentSerializer(data=data, context={'request': None})
+    assert not serializer.is_valid()
+    assert 'amount' in serializer.errors
+
+
+def test_payment_hide_amount(authenticated_client, collect, user):
+    """Проверка, что скрытие суммы платежа работает."""
+    data = {'collect': collect.id, 'amount': 1000, 'hide_amount': True}
+    response = authenticated_client.post('/api/v1/payments/', data)
+
+    assert response.status_code == 201
+    assert response.data['hide_amount'] is True
+
+
+def test_collect_serializer_minimal_data(user):
+    """Проверка, что сериализатор Collect валиден с минимальными данными."""
+    data = {
+        'title': 'Test',
+        'description': 'Desc',
+        'occasion': 'other',
+        'end_datetime': timezone.now() + timedelta(days=1),
+    }
+    serializer = CollectSerializer(data=data, context={'request': None})
+    assert serializer.is_valid()
+
+
+def test_create_payment_on_completed_collect(
+    authenticated_client, completed_collect
+):
+    """Проверка, что нельзя внести платеж в завершенный сбор."""
+    data = {
+        'collect': completed_collect.id,
+        'amount': 500,
+        'hide_amount': False
+    }
+    response = authenticated_client.post('/api/v1/payments/', data)
+
+    assert response.status_code == 400

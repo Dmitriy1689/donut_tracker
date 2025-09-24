@@ -25,8 +25,8 @@ class CollectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Collect.objects.annotate(
-            total_amount=Sum('payments__amount'),
-            total_donators=Count('payments__donator', distinct=True)
+            current_amount=Sum('payments__amount'),
+            donators_count=Count('payments__donator', distinct=True)
         ).prefetch_related('payments__donator')
 
     def perform_create(self, serializer):
